@@ -1,0 +1,14 @@
+services:
+  nadi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nadi-monitor
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env:ro
+    environment:
+      - NODE_ENV=production
