@@ -1,6 +1,7 @@
 import React from 'react';
 import { SummaryCards } from '../components/SummaryCards.js';
 import { TopConsumerCard } from '../components/TopConsumerCard.js';
+import { LiveDestinationBreakdown } from '../components/LiveDestinationBreakdown.js';
 import { LiveTable } from '../components/LiveTable.js';
 import type { UserBandwidthSample, NetworkSummary } from '../../server/types.js';
 
@@ -20,11 +21,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onOpenSpeedTest,
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 pb-12 md:pb-0">
       {/* 1. Network Summary Metrics */}
       <SummaryCards summary={summary} onOpenSpeedTest={onOpenSpeedTest} />
 
-      {/* 2. Top Consumer Highlight */}
+      {/* 2. Real-Time Destination Breakdown (Where is bandwidth going?) */}
+      <LiveDestinationBreakdown
+        destinations={summary?.liveDestinations}
+        totalRxRateBps={summary?.totalRxRateBps}
+        totalTxRateBps={summary?.totalTxRateBps}
+        capacityMbps={summary?.capacityMbps}
+      />
+
+      {/* 3. Top Consumer Highlight */}
       <TopConsumerCard
         topConsumer={summary?.topConsumer}
         totalRxRateBps={summary?.totalRxRateBps}
@@ -32,7 +41,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         onInspectTraffic={onInspectTraffic}
       />
 
-      {/* 3. Realtime User Table */}
+      {/* 4. Realtime User Table */}
       <LiveTable
         users={users}
         topUsername={summary?.topConsumer?.username}
@@ -42,3 +51,4 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     </div>
   );
 };
+

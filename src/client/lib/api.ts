@@ -69,3 +69,20 @@ export async function fetchWanLive(): Promise<{ success: boolean; wan: any }> {
   return res.json();
 }
 
+export async function fetchConfig(): Promise<{ success: boolean; capacityMbps: number; settings: Record<string, string>; envDefaults: any }> {
+  const res = await fetch('/api/config');
+  if (!res.ok) throw new Error(`Failed to fetch config: ${res.statusText}`);
+  return res.json();
+}
+
+export async function updateConfig(payload: { capacityMbps?: number; routerLabel?: string; customSettings?: Record<string, string> }): Promise<{ success: boolean; capacityMbps: number; settings: Record<string, string>; message: string }> {
+  const res = await fetch('/api/config', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to update config: ${res.statusText}`);
+  return res.json();
+}
+
+

@@ -4,7 +4,8 @@ import {
   UserConnectionDetail,
   TrafficCategoryBreakdown,
   HotspotHostItem,
-  SecurityLogItem
+  SecurityLogItem,
+  LiveTrafficDestination
 } from '../types.js';
 
 // ==========================================
@@ -126,5 +127,109 @@ export class MockMikrotikGenerator {
       { id: 'log-3', time: '16:42:30', timestamp: now - 460000, topics: ['hotspot', 'info'], message: 'user reza.pratama (192.168.41.104): logged in from 192.168.41.104 (DC:A6:32:AA:BB:CC)', severity: 'info', type: 'hotspot_login_success', targetUser: 'reza.pratama', targetIp: '192.168.41.104', targetMac: 'DC:A6:32:AA:BB:CC' },
       { id: 'log-4', time: '16:38:15', timestamp: now - 720000, topics: ['account', 'warning'], message: 'system: login failed for user testadmin from 192.168.41.203 via winbox', severity: 'error', type: 'router_auth_failed', targetUser: 'testadmin', targetIp: '192.168.41.203' },
     ];
+  }
+
+  generateLiveDestinations(totalWanBps = 85000000): LiveTrafficDestination[] {
+    const total = Math.max(10000000, totalWanBps);
+
+    const rawList = [
+      {
+        id: 'youtube',
+        name: 'YouTube Video Stream',
+        category: 'Streaming & Media',
+        badge: 'Google Video CDN',
+        explanation: 'Streaming video buffer / playback chunk',
+        appIconKey: 'youtube',
+        share: 0.42,
+        activeStreamsCount: 18,
+        sampleDomain: 'rr3.sn-ojnpo5-5j.googlevideo.com',
+      },
+      {
+        id: 'meta',
+        name: 'Instagram / Facebook Media',
+        category: 'Streaming & Media',
+        badge: 'Meta Media CDN',
+        explanation: 'Reels, Stories, and photo feed transfer',
+        appIconKey: 'meta',
+        share: 0.22,
+        activeStreamsCount: 12,
+        sampleDomain: 'scontent-cgk1-1.cdninstagram.com',
+      },
+      {
+        id: 'tiktok',
+        name: 'TikTok Video Stream',
+        category: 'Streaming & Media',
+        badge: 'ByteDance CDN',
+        explanation: 'Short-form video stream & Live data',
+        appIconKey: 'tiktok',
+        share: 0.14,
+        activeStreamsCount: 9,
+        sampleDomain: 'v16-webapp-prime.tiktokcdn.com',
+      },
+      {
+        id: 'zoom',
+        name: 'Zoom Video Conference',
+        category: 'VoIP & Meetings',
+        badge: 'Zoom VoIP',
+        explanation: 'Real-time video/audio meeting stream',
+        appIconKey: 'zoom',
+        share: 0.09,
+        activeStreamsCount: 4,
+        sampleDomain: 'rw-us-west.zoom.us',
+      },
+      {
+        id: 'windows_update',
+        name: 'Windows Update / Microsoft OS',
+        category: 'File Transfer & Downloads',
+        badge: 'Microsoft CDN',
+        explanation: 'Operating system background patch download',
+        appIconKey: 'windows',
+        share: 0.06,
+        activeStreamsCount: 2,
+        sampleDomain: 'download.windowsupdate.com',
+      },
+      {
+        id: 'whatsapp',
+        name: 'WhatsApp Call & Media Sync',
+        category: 'Web & Cloud Services',
+        badge: 'WhatsApp Media',
+        explanation: 'Voice/video call or document download',
+        appIconKey: 'whatsapp',
+        share: 0.04,
+        activeStreamsCount: 6,
+        sampleDomain: 'media-cgk1-1.cdn.whatsapp.net',
+      },
+      {
+        id: 'web_general',
+        name: 'General Web & Cloud Services',
+        category: 'Web & Cloud Services',
+        badge: 'HTTPS / Cloud',
+        explanation: 'Standard web browsing, APIs, and cloud services',
+        appIconKey: 'web',
+        share: 0.03,
+        activeStreamsCount: 15,
+        sampleDomain: 'api.github.com',
+      },
+    ];
+
+    return rawList.map(item => {
+      const rate = Math.round(total * item.share);
+      const dlRate = Math.round(rate * 0.88);
+      const ulRate = Math.round(rate * 0.12);
+      return {
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        badge: item.badge,
+        explanation: item.explanation,
+        appIconKey: item.appIconKey,
+        downloadRateBps: dlRate,
+        uploadRateBps: ulRate,
+        totalRateBps: dlRate + ulRate,
+        percentageOfWan: Math.round(item.share * 100),
+        activeStreamsCount: item.activeStreamsCount,
+        sampleDomain: item.sampleDomain,
+      };
+    });
   }
 }

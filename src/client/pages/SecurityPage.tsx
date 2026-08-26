@@ -85,10 +85,10 @@ export const SecurityPage: React.FC = () => {
       </div>
 
       {/* Sub Navigation Bar */}
-      <div className="flex items-center space-x-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 w-fit">
+      <div className="flex items-center space-x-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 w-full sm:w-fit overflow-x-auto">
         <button
           onClick={() => setActiveSubTab('threat-map')}
-          className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex-shrink-0 ${
             activeSubTab === 'threat-map'
               ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
@@ -100,26 +100,26 @@ export const SecurityPage: React.FC = () => {
 
         <button
           onClick={() => setActiveSubTab('hosts')}
-          className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex-shrink-0 ${
             activeSubTab === 'hosts'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
           }`}
         >
           <Laptop className="w-4 h-4" />
-          <span>Captive Portal Hosts ({unauthorizedHosts.length})</span>
+          <span>Captive Hosts ({unauthorizedHosts.length})</span>
         </button>
 
         <button
           onClick={() => setActiveSubTab('logs')}
-          className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex-shrink-0 ${
             activeSubTab === 'logs'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
               : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
           }`}
         >
           <Terminal className="w-4 h-4" />
-          <span>Auth & Audit Logs ({logs.length})</span>
+          <span>Audit Logs ({logs.length})</span>
         </button>
       </div>
 

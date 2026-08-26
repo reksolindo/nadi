@@ -19,6 +19,7 @@ import { aggregateRoutes } from './routes/aggregate.js';
 import { statusRoutes } from './routes/status.js';
 import { securityRoutes } from './routes/security.js';
 import { speedTestRoutes } from './routes/speedtest.js';
+import { configRoutes } from './routes/config.js';
 
 // ==========================================
 // Fastify Server Bootstrap
@@ -64,6 +65,7 @@ async function startServer() {
   await fastify.register(statusRoutes(poller));
   await fastify.register(securityRoutes(poller));
   await fastify.register(speedTestRoutes);
+  await fastify.register(configRoutes, { poller });
 
   // 8. Serve static Frontend build if present (production / Docker mode)
   const clientDistPath = path.resolve(process.cwd(), 'dist/client');

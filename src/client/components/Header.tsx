@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Wifi, BarChart3, LineChart, Server, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Activity, Wifi, BarChart3, LineChart, Server, AlertCircle, ShieldAlert, Sliders } from 'lucide-react';
 import { formatTimeOnly } from '../lib/format.js';
 
 interface HeaderProps {
@@ -11,6 +11,7 @@ interface HeaderProps {
   lastUpdated: number | null;
   capacityMbps: number;
   onOpenSpeedTest?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,14 +23,15 @@ export const Header: React.FC<HeaderProps> = ({
   lastUpdated,
   capacityMbps,
   onOpenSpeedTest,
+  onOpenSettings,
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Brand & Logo */}
-          <div className="flex items-center space-x-3">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 shadow-lg shadow-blue-500/20 text-white font-bold">
+          <div className="flex items-center space-x-2.5 sm:space-x-3">
+            <div className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 shadow-lg shadow-blue-500/20 text-white font-bold flex-shrink-0">
               <Activity className="w-5 h-5 animate-pulse" />
               {wsConnected && (
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -41,21 +43,26 @@ export const Header: React.FC<HeaderProps> = ({
 
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
+                <span className="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
                   NADI
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  {capacityMbps} Mbps ISP
-                </span>
+                <button
+                  type="button"
+                  onClick={onOpenSettings}
+                  title="Click to configure ISP capacity"
+                  className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 hover:border-blue-500/40 transition-all flex items-center space-x-1 cursor-pointer"
+                >
+                  <span>{capacityMbps} Mbps ISP</span>
+                </button>
               </div>
-              <p className="text-xs text-slate-400 hidden sm:block">
+              <p className="text-[11px] text-slate-400 hidden sm:block">
                 Network Activity & Data Insight
               </p>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <nav className="flex items-center space-x-1 sm:space-x-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+          {/* Desktop Navigation Tabs (Hidden on Mobile) */}
+          <nav className="hidden md:flex items-center space-x-1 sm:space-x-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
             <button
               onClick={() => onSelectTab('live')}
               className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
@@ -113,16 +120,26 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <Server className="w-4 h-4" />
-              <span className="hidden sm:inline">System</span>
+              <span>System</span>
             </button>
           </nav>
 
-          {/* Connection Status & Speedtest Action */}
-          <div className="flex items-center space-x-2.5 text-xs">
+          {/* Connection Status & Speedtest / Settings Actions */}
+          <div className="flex items-center space-x-2 text-xs">
+            {onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                title="Open Settings"
+                className="p-1.5 sm:p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-all"
+              >
+                <Sliders className="w-4 h-4 text-slate-300" />
+              </button>
+            )}
+
             {onOpenSpeedTest && (
               <button
                 onClick={onOpenSpeedTest}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-md shadow-blue-500/20 transition-all text-xs"
+                className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-md shadow-blue-500/20 transition-all text-xs"
               >
                 <Activity className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Speed Test</span>
@@ -130,24 +147,24 @@ export const Header: React.FC<HeaderProps> = ({
             )}
 
             {!routerConnected ? (
-              <div className="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20" title={routerError || 'Mikrotik disconnected'}>
+              <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20" title={routerError || 'Mikrotik disconnected'}>
                 <AlertCircle className="w-3.5 h-3.5" />
-                <span className="font-medium">Router Offline</span>
+                <span className="font-medium text-[11px] hidden sm:inline">Router Offline</span>
               </div>
             ) : wsConnected ? (
-              <div className="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <div className="flex items-center space-x-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="font-medium">Live (5s)</span>
+                <span className="font-medium text-[11px] hidden sm:inline">Live (5s)</span>
               </div>
             ) : (
-              <div className="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <div className="flex items-center space-x-1 px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                <span className="font-medium">Connecting...</span>
+                <span className="font-medium text-[11px] hidden sm:inline">Syncing</span>
               </div>
             )}
 
             {lastUpdated && (
-              <div className="hidden md:block text-slate-400 font-mono-num">
+              <div className="hidden lg:block text-slate-400 font-mono-num text-[11px]">
                 {formatTimeOnly(lastUpdated)}
               </div>
             )}
@@ -157,3 +174,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

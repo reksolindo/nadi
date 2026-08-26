@@ -1,7 +1,8 @@
 {
   "name": "nadi",
   "version": "1.0.0",
-  "description": "NADI - Network Activity & Data Insight (Internal Network Bandwidth Monitor)",
+  "description": "NADI - Network Activity & Data Insight (Internal Network Bandwidth Monitor & Threat Intelligence)",
+  "license": "GPL-3.0-or-later",
   "main": "dist/server/index.js",
   "type": "module",
   "scripts": {

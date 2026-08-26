@@ -72,6 +72,13 @@ export function initSchema(): void {
 
     CREATE INDEX IF NOT EXISTS idx_daily_agg_time
       ON daily_aggregates (day_start);
+
+    -- Dynamic App Settings & Runtime Configuration
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
   `);
 
   console.log('[DB] Schema verified & initialized successfully');

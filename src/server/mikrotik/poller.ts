@@ -14,6 +14,7 @@ import { RawSamplesRepository } from '../db/raw-samples.js';
 import { WebSocketHandler } from '../ws/handler.js';
 import { ThreatAnalyzer } from './threat-analyzer.js';
 import { SpeedTestService } from './speedtest.js';
+import { getIspCapacityMbps } from '../db/settings.js';
 
 // ==========================================
 // Mikrotik Poller Service
@@ -141,8 +142,22 @@ export class MikrotikPoller {
 
       this.lastPolledAt = Date.now();
 
-      // Compute network summary
-      const summary = this.computeSummary(samples, wanSample);
+      // Compute total WAN bandwidth for proportional destination calculation
+      const totalWanThroughput = wanSample ? (wanSample.rxRateBps + wanSample.txRateBps) : 0;
+      let liveDestinations: any[] = [];
+
+      try {
+        if (config.MOCK_MODE) {
+          liveDestinations = this.mockGenerator.generateLiveDestinations(totalWanThroughput);
+        } else if (this.client.connected) {
+          liveDestinations = await this.client.getLiveTrafficDestinations(totalWanThroughput);
+        }
+      } catch (destErr: any) {
+        console.warn(`[Poller] Destination traffic query failed: ${destErr.message}`);
+      }
+
+      // Compute network summary with dynamic ISP capacity
+      const summary = this.computeSummary(samples, wanSample, liveDestinations);
       this.latestSamples = samples;
       this.latestSummary = summary;
 
@@ -234,9 +249,9 @@ export class MikrotikPoller {
   }
 
   /**
-   * Compute aggregate statistics and identify top consumer
+   * Compute aggregate statistics and identify top consumer using dynamic ISP capacity
    */
-  private computeSummary(samples: UserBandwidthSample[], wanSample?: any): NetworkSummary {
+  private computeSummary(samples: UserBandwidthSample[], wanSample?: any, liveDestinations?: any[]): NetworkSummary {
     let totalRxRate = 0;
     let totalTxRate = 0;
     let totalRxRateBps = 0;
@@ -261,7 +276,9 @@ export class MikrotikPoller {
     const effectiveTotalRxBps = wanSample?.rxRateBps ? Math.max(wanSample.rxRateBps, totalRxRateBps) : totalRxRateBps;
     const effectiveTotalTxBps = wanSample?.txRateBps ? Math.max(wanSample.txRateBps, totalTxRateBps) : totalTxRateBps;
 
-    const capacityBps = config.CAPACITY_MBPS * 1_000_000;
+    // Dynamically retrieve configured ISP capacity from DB settings
+    const capacityMbps = getIspCapacityMbps();
+    const capacityBps = capacityMbps * 1_000_000;
     const totalBandwidthBps = effectiveTotalRxBps + effectiveTotalTxBps;
     const utilizationPercent = capacityBps > 0
       ? Math.min(100, (totalBandwidthBps / capacityBps) * 100)
@@ -274,9 +291,10 @@ export class MikrotikPoller {
       totalRxRate,
       totalTxRateBps,
       totalRxRateBps,
-      capacityMbps: config.CAPACITY_MBPS,
+      capacityMbps,
       utilizationPercent: Math.round(utilizationPercent * 10) / 10,
       wanInterface: wanSample,
+      liveDestinations: liveDestinations || this.latestSummary?.liveDestinations,
       topConsumer: topConsumerSample ? {
         username: topConsumerSample.username,
         ipAddress: topConsumerSample.ipAddress,
@@ -289,6 +307,26 @@ export class MikrotikPoller {
     };
 
     return summary;
+  }
+
+  /**
+   * Broadcast immediate summary update (e.g. after ISP capacity config change)
+   */
+  public refreshSummary(): void {
+    if (this.latestSamples) {
+      const summary = this.computeSummary(this.latestSamples, this.latestSummary?.wanInterface, this.latestSummary?.liveDestinations);
+      this.latestSummary = summary;
+      const wsMessage: WebSocketMessage = {
+        type: 'snapshot',
+        timestamp: Date.now(),
+        summary,
+        users: this.latestSamples,
+        routerConnected: this.client.connected || config.MOCK_MODE,
+        routerError: this.lastError,
+        latestSpeedTest: SpeedTestService.getLatest(),
+      };
+      WebSocketHandler.broadcast(wsMessage);
+    }
   }
 
   /**

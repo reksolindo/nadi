@@ -41,6 +41,21 @@ export interface SpeedTestResult {
   clientIp?: string;
 }
 
+export interface LiveTrafficDestination {
+  id: string;
+  name: string;               // e.g. "YouTube Video Stream"
+  category: string;           // e.g. "Streaming & Media"
+  badge: string;              // e.g. "Google Video CDN"
+  explanation: string;        // e.g. "Streaming video buffer / playback chunk"
+  appIconKey: string;         // e.g. "youtube", "meta", "tiktok", "zoom", "windows", etc.
+  downloadRateBps: number;    // Live download bits/sec
+  uploadRateBps: number;      // Live upload bits/sec
+  totalRateBps: number;       // download + upload bits/sec
+  percentageOfWan: number;    // % share of total active traffic
+  activeStreamsCount: number; // Number of active connection flows
+  sampleDomain?: string;      // e.g. "rr3.sn-ojnpo5-5j.googlevideo.com"
+}
+
 export interface NetworkSummary {
   timestamp: number;
   totalActiveUsers: number;
@@ -51,6 +66,7 @@ export interface NetworkSummary {
   capacityMbps: number;    // ISP Capacity (e.g. 200)
   utilizationPercent: number; // (Total download + upload rate) / Capacity * 100
   wanInterface?: WanInterfaceSample; // Real-time WAN (ether11) physical throughput
+  liveDestinations?: LiveTrafficDestination[]; // Real-time traffic destination & app breakdown
   topConsumer?: {
     username: string;
     ipAddress: string;

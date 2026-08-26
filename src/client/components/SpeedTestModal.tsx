@@ -8,9 +8,15 @@ interface SpeedTestModalProps {
   isOpen: boolean;
   onClose: () => void;
   wanLive?: WanInterfaceSample;
+  capacityMbps?: number;
 }
 
-export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ isOpen, onClose, wanLive }) => {
+export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({
+  isOpen,
+  onClose,
+  wanLive,
+  capacityMbps = 200,
+}) => {
   const [isRunning, setIsRunning] = useState(false);
   const [currentResult, setCurrentResult] = useState<SpeedTestResult | null>(null);
   const [history, setHistory] = useState<SpeedTestResult[]>([]);
@@ -83,8 +89,8 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ isOpen, onClose,
   const wanUpDisplay = formatSpeed(effectiveWan?.txRateBps || 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
         {/* Modal Header */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
           <div className="flex items-center space-x-3">
@@ -95,7 +101,7 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ isOpen, onClose,
               <h3 className="text-base font-extrabold text-white flex items-center space-x-2">
                 <span>ISP Speed Benchmark & Real-Time Throughput</span>
                 <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-bold">
-                  200 Mbps Capacity
+                  {capacityMbps} Mbps Capacity
                 </span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">

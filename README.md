@@ -238,6 +238,9 @@ npm run dev:client
 | `GET` | `/api/aggregate?range=1h\|24h\|7d\|30d` | Retrieve aggregate network bandwidth against ISP capacity |
 | `GET` | `/api/security/hosts` | Retrieve unauthenticated and captive portal host records |
 | `GET` | `/api/security/logs` | Retrieve hotspot login failures and security audit logs |
+| `GET` | `/api/security/threat-map` | Retrieve global threat intelligence summary and active intrusion vectors |
+| `GET` | `/api/config` | Retrieve configurable runtime parameters (ISP capacity, etc.) |
+| `PATCH` | `/api/config` | Update runtime configuration dynamically |
 | `GET` | `/api/status` | Retrieve system diagnostics, SQLite row counts, and memory usage |
 | `WS` | `/ws` | Real-time WebSocket feed broadcasting live snapshots every 5 seconds |
 
@@ -245,4 +248,6 @@ npm run dev:client
 
 ## License
 
-Internal proprietary software for Reksolindo. All rights reserved.
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0-or-later)**.  
+See the [LICENSE](LICENSE) file for the full license text.
+

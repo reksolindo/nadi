@@ -101,8 +101,8 @@ export const LiveTable: React.FC<LiveTableProps> = ({ users, topUsername, onSele
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Desktop Table (Hidden on Mobile) */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-950/60 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
             <tr>
@@ -144,8 +144,8 @@ export const LiveTable: React.FC<LiveTableProps> = ({ users, topUsername, onSele
                 <td colSpan={7} className="py-12 text-center text-slate-500">
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <Wifi className="w-8 h-8 text-slate-600 animate-pulse" />
-                    <p className="text-sm font-medium">Tidak ada user aktif ditemukan</p>
-                    <p className="text-xs text-slate-600">Pastikan router Mikrotik terhubung dan hotspot sedang aktif</p>
+                    <p className="text-sm font-medium">No active users found</p>
+                    <p className="text-xs text-slate-600">Ensure MikroTik router is online and active users are authenticated</p>
                   </div>
                 </td>
               </tr>
@@ -204,7 +204,7 @@ export const LiveTable: React.FC<LiveTableProps> = ({ users, topUsername, onSele
                       <div className="text-[11px] text-slate-400">{user.macAddress || '-'}</div>
                     </td>
 
-                    {/* Download Speed + Mini progress bar */}
+                    {/* Download Speed */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-baseline space-x-1.5 font-mono-num">
                         <span className="text-sm font-bold text-blue-400">{rx.value}</span>
@@ -245,7 +245,7 @@ export const LiveTable: React.FC<LiveTableProps> = ({ users, topUsername, onSele
                           <button
                             onClick={() => onInspectTraffic(user.ipAddress, user.username)}
                             className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-orange-400 hover:text-orange-300 border border-orange-500/20 transition-all text-xs font-semibold"
-                            title={`Inspect connection streams & active websites for ${user.username}`}
+                            title={`Inspect connection streams for ${user.username}`}
                           >
                             <Search className="w-3.5 h-3.5" />
                             <span>Inspect</span>
@@ -255,7 +255,7 @@ export const LiveTable: React.FC<LiveTableProps> = ({ users, topUsername, onSele
                         <button
                           onClick={() => onSelectUser(user.username)}
                           className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-all text-xs font-semibold"
-                          title={`View bandwidth history for ${user.username}`}
+                          title={`View history for ${user.username}`}
                         >
                           <LineChart className="w-3.5 h-3.5" />
                           <span>History</span>
@@ -268,6 +268,112 @@ export const LiveTable: React.FC<LiveTableProps> = ({ users, topUsername, onSele
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card List View (Visible on Mobile only) */}
+      <div className="block md:hidden divide-y divide-slate-800/80">
+        {filteredUsers.length === 0 ? (
+          <div className="py-12 text-center text-slate-500 px-4">
+            <Wifi className="w-8 h-8 text-slate-600 animate-pulse mx-auto mb-2" />
+            <p className="text-sm font-medium">No active users found</p>
+          </div>
+        ) : (
+          filteredUsers.map((user, idx) => {
+            const isTop = user.username === topUsername;
+            const rx = formatSpeed(user.rxRateBps);
+            const tx = formatSpeed(user.txRateBps);
+            const totalRx = formatBytes(user.rxBytes);
+            const totalTx = formatBytes(user.txBytes);
+
+            return (
+              <div
+                key={`mobile-${user.username}-${user.ipAddress}`}
+                className={`p-3.5 space-y-3 transition-colors ${
+                  isTop ? 'bg-orange-950/15' : 'hover:bg-slate-900/40'
+                }`}
+              >
+                {/* Top Row: User + Badge + Rank */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-slate-800 text-[10px] font-bold text-slate-400 font-mono-num">
+                      #{idx + 1}
+                    </span>
+                    <span className="font-bold text-white text-sm font-mono-num">
+                      {user.username}
+                    </span>
+                    {isTop && (
+                      <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                        TOP
+                      </span>
+                    )}
+                  </div>
+
+                  {user.uptime && (
+                    <span className="text-[10px] text-slate-400 font-mono-num flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-500" />
+                      {cleanUptime(user.uptime)}
+                    </span>
+                  )}
+                </div>
+
+                {/* Sub row: IP & MAC */}
+                <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono-num">
+                  <span>{user.ipAddress}</span>
+                  <span className="text-slate-500">{user.macAddress || '-'}</span>
+                </div>
+
+                {/* Speed & Transferred Matrix */}
+                <div className="grid grid-cols-2 gap-2 bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80 font-mono-num">
+                  <div>
+                    <div className="text-[10px] text-slate-500 flex items-center gap-1 font-semibold uppercase">
+                      <ArrowDown className="w-3 h-3 text-blue-400" />
+                      <span>Download</span>
+                    </div>
+                    <div className="text-sm font-bold text-blue-400 mt-0.5">
+                      {rx.value} <span className="text-[10px] text-blue-400/80">{rx.unit}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      Total: {totalRx.full}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] text-slate-500 flex items-center gap-1 font-semibold uppercase">
+                      <ArrowUp className="w-3 h-3 text-emerald-400" />
+                      <span>Upload</span>
+                    </div>
+                    <div className="text-sm font-bold text-emerald-400 mt-0.5">
+                      {tx.value} <span className="text-[10px] text-emerald-400/80">{tx.unit}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      Total: {totalTx.full}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons (Touch Friendly) */}
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  {onInspectTraffic && (
+                    <button
+                      onClick={() => onInspectTraffic(user.ipAddress, user.username)}
+                      className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-orange-400 border border-orange-500/20 font-bold text-xs flex items-center justify-center space-x-1.5 transition-all"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      <span>Inspect Traffic</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onSelectUser(user.username)}
+                    className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white border border-slate-700/60 font-bold text-xs flex items-center justify-center space-x-1.5 transition-all"
+                  >
+                    <LineChart className="w-3.5 h-3.5" />
+                    <span>View History</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

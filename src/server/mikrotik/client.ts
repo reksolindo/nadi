@@ -7,7 +7,8 @@ import type {
   TrafficCategoryBreakdown,
   HotspotHostItem,
   SecurityLogItem,
-  WanInterfaceSample
+  WanInterfaceSample,
+  LiveTrafficDestination
 } from '../types.js';
 
 // ==========================================
@@ -855,6 +856,261 @@ export class MikrotikClient {
         dropsPerSec: 0,
         lastCheckedAt: now,
       };
+    }
+  }
+
+  /**
+   * Aggregate active WAN/LAN connections across the entire router to determine
+   * real-time bandwidth drain per destination application (YouTube, TikTok, Instagram, Zoom, etc.)
+   */
+  async getLiveTrafficDestinations(totalWanBps = 0): Promise<LiveTrafficDestination[]> {
+    try {
+      const [rawConns, dnsCache] = await Promise.all([
+        this.executeCommand(['/ip/firewall/connection/print']).catch(() => []),
+        this.executeCommand(['/ip/dns/cache/print']).catch(() => []),
+      ]);
+
+      const dnsMap = new Map<string, string>();
+      for (const d of dnsCache) {
+        if (d.type === '!re' && d.attributes['type'] === 'A') {
+          const ip = d.attributes['data'];
+          const domain = d.attributes['name'];
+          if (ip && domain) {
+            dnsMap.set(ip, domain);
+          }
+        }
+      }
+
+      interface GroupedDest {
+        id: string;
+        name: string;
+        category: string;
+        badge: string;
+        explanation: string;
+        appIconKey: string;
+        downloadRateBps: number;
+        uploadRateBps: number;
+        activeStreamsCount: number;
+        sampleDomain?: string;
+      }
+
+      const groups = new Map<string, GroupedDest>();
+
+      const getAppMeta = (domain?: string, service?: string, port = 80) => {
+        const d = (domain || '').toLowerCase();
+        const s = (service || '').toLowerCase();
+
+        if (d.includes('googlevideo') || d.includes('youtube')) {
+          return {
+            id: 'youtube',
+            name: 'YouTube Video Stream',
+            category: 'Streaming & Media',
+            badge: 'Google Video CDN',
+            explanation: 'Streaming video buffer / playback chunk',
+            appIconKey: 'youtube',
+          };
+        }
+        if (d.includes('fbcdn') || d.includes('cdninstagram') || d.includes('instagram') || d.includes('facebook')) {
+          return {
+            id: 'meta',
+            name: 'Instagram / Facebook Media',
+            category: 'Streaming & Media',
+            badge: 'Meta Media CDN',
+            explanation: 'Reels, Stories, and photo feed transfer',
+            appIconKey: 'meta',
+          };
+        }
+        if (d.includes('tiktok') || d.includes('byteoversea') || d.includes('ibytedtos')) {
+          return {
+            id: 'tiktok',
+            name: 'TikTok Video Stream',
+            category: 'Streaming & Media',
+            badge: 'ByteDance CDN',
+            explanation: 'Short-form video stream & Live data',
+            appIconKey: 'tiktok',
+          };
+        }
+        if (d.includes('netflix') || d.includes('nflxvideo')) {
+          return {
+            id: 'netflix',
+            name: 'Netflix Video Stream',
+            category: 'Streaming & Media',
+            badge: 'Netflix Open Connect',
+            explanation: 'High-definition video streaming buffer',
+            appIconKey: 'netflix',
+          };
+        }
+        if (d.includes('spotify') || d.includes('audio-ak-spotify') || port === 4070) {
+          return {
+            id: 'spotify',
+            name: 'Spotify Audio Streaming',
+            category: 'Streaming & Media',
+            badge: 'Spotify Music CDN',
+            explanation: 'High-bitrate music playback stream',
+            appIconKey: 'spotify',
+          };
+        }
+        if (d.includes('zoom') || d.includes('zoomgov')) {
+          return {
+            id: 'zoom',
+            name: 'Zoom Video Conference',
+            category: 'VoIP & Meetings',
+            badge: 'Zoom VoIP',
+            explanation: 'Real-time video/audio meeting stream',
+            appIconKey: 'zoom',
+          };
+        }
+        if (d.includes('teams.microsoft') || d.includes('skype')) {
+          return {
+            id: 'teams',
+            name: 'Microsoft Teams Meeting',
+            category: 'VoIP & Meetings',
+            badge: 'Teams VoIP',
+            explanation: 'Conference call & collaboration stream',
+            appIconKey: 'teams',
+          };
+        }
+        if (d.includes('meet.google') || d.includes('webrtc')) {
+          return {
+            id: 'google_meet',
+            name: 'Google Meet / WebRTC',
+            category: 'VoIP & Meetings',
+            badge: 'Google VoIP',
+            explanation: 'Real-time video/audio communication',
+            appIconKey: 'google',
+          };
+        }
+        if (d.includes('whatsapp')) {
+          return {
+            id: 'whatsapp',
+            name: 'WhatsApp Call & Media Sync',
+            category: 'Web & Cloud Services',
+            badge: 'WhatsApp Media',
+            explanation: 'Voice/video call or document download',
+            appIconKey: 'whatsapp',
+          };
+        }
+        if (d.includes('windowsupdate') || d.includes('delivery.mp.microsoft') || d.includes('update.microsoft') || port === 7680) {
+          return {
+            id: 'windows_update',
+            name: 'Windows Update / Microsoft OS',
+            category: 'File Transfer & Downloads',
+            badge: 'Microsoft CDN',
+            explanation: 'Operating system background patch download',
+            appIconKey: 'windows',
+          };
+        }
+        if (d.includes('gvt1.com') || d.includes('gvt2.com') || d.includes('play.googleapis')) {
+          return {
+            id: 'google_play',
+            name: 'Google Play Store Updates',
+            category: 'File Transfer & Downloads',
+            badge: 'Google App Delivery',
+            explanation: 'Android application downloads & updates',
+            appIconKey: 'google',
+          };
+        }
+        if (d.includes('apple.com') || d.includes('icloud.com') || d.includes('aaplimg')) {
+          return {
+            id: 'apple',
+            name: 'Apple iCloud & App Store',
+            category: 'Web & Cloud Services',
+            badge: 'Apple CDN',
+            explanation: 'iOS / macOS apps & iCloud sync',
+            appIconKey: 'apple',
+          };
+        }
+        if (d.includes('steampowered') || d.includes('steamcontent') || d.includes('epicgames') || d.includes('roblox')) {
+          return {
+            id: 'gaming',
+            name: 'Online Gaming & Game Updates',
+            category: 'Gaming & Apps',
+            badge: 'Game Delivery CDN',
+            explanation: 'Multiplayer gaming sessions & asset downloads',
+            appIconKey: 'gaming',
+          };
+        }
+        if (d.includes('cloudflare') || d.includes('akamaized') || d.includes('fastly')) {
+          return {
+            id: 'cdn_edge',
+            name: 'Edge CDN Acceleration',
+            category: 'Web & Cloud Services',
+            badge: 'Global Edge CDN',
+            explanation: 'Encrypted CDN accelerated web assets',
+            appIconKey: 'cloud',
+          };
+        }
+
+        return {
+          id: 'web_general',
+          name: 'General Web & Cloud Traffic',
+          category: 'Web & Cloud Services',
+          badge: 'HTTPS / Cloud',
+          explanation: 'Standard web browsing, APIs, and cloud services',
+          appIconKey: 'web',
+        };
+      };
+
+      for (const s of rawConns) {
+        if (s.type !== '!re') continue;
+        const dstAddress = s.attributes['dst-address'] || '';
+        const origRate = parseInt(s.attributes['orig-rate'] || '0', 10);
+        const replRate = parseInt(s.attributes['repl-rate'] || '0', 10);
+        const origBytes = parseInt(s.attributes['orig-bytes'] || '0', 10);
+        const replBytes = parseInt(s.attributes['repl-bytes'] || '0', 10);
+
+        const parts = dstAddress.split(':');
+        const dstIp = parts[0] || '';
+        const dstPort = parts.length > 1 ? parseInt(parts[1], 10) : 80;
+
+        const cachedDomain = dnsMap.get(dstIp);
+        const { category, service, domainName } = this.classifyPortAndDomain(dstPort, s.attributes['protocol'] || 'tcp', dstIp, cachedDomain);
+        const meta = getAppMeta(domainName, service, dstPort);
+
+        const dlRate = replRate > 0 ? replRate : Math.round((replBytes / Math.max(1, (origBytes + replBytes))) * 50000);
+        const ulRate = origRate > 0 ? origRate : Math.round((origBytes / Math.max(1, (origBytes + replBytes))) * 10000);
+
+        const existing = groups.get(meta.id) || {
+          ...meta,
+          downloadRateBps: 0,
+          uploadRateBps: 0,
+          activeStreamsCount: 0,
+          sampleDomain: domainName || cachedDomain,
+        };
+
+        existing.downloadRateBps += dlRate;
+        existing.uploadRateBps += ulRate;
+        existing.activeStreamsCount += 1;
+        if (!existing.sampleDomain && domainName) {
+          existing.sampleDomain = domainName;
+        }
+        groups.set(meta.id, existing);
+      }
+
+      const totalTraffic = Math.max(1, totalWanBps, Array.from(groups.values()).reduce((acc, g) => acc + g.downloadRateBps + g.uploadRateBps, 0));
+
+      const result: LiveTrafficDestination[] = Array.from(groups.values()).map(g => {
+        const totalRateBps = g.downloadRateBps + g.uploadRateBps;
+        return {
+          id: g.id,
+          name: g.name,
+          category: g.category,
+          badge: g.badge,
+          explanation: g.explanation,
+          appIconKey: g.appIconKey,
+          downloadRateBps: g.downloadRateBps,
+          uploadRateBps: g.uploadRateBps,
+          totalRateBps,
+          percentageOfWan: Math.min(100, Math.round((totalRateBps / totalTraffic) * 100)),
+          activeStreamsCount: g.activeStreamsCount,
+          sampleDomain: g.sampleDomain,
+        };
+      });
+
+      result.sort((a, b) => b.totalRateBps - a.totalRateBps);
+      return result.slice(0, 8);
+    } catch {
+      return [];
     }
   }
 }

@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { RawSamplesRepository } from '../db/raw-samples.js';
 import { AggregatesRepository } from '../db/aggregates.js';
-import { config } from '../config.js';
+import { getIspCapacityMbps } from '../db/settings.js';
 
 // ==========================================
 // Aggregate Total Bandwidth Routes
@@ -51,7 +51,7 @@ export const aggregateRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({
       success: true,
       range,
-      capacityMbps: config.CAPACITY_MBPS,
+      capacityMbps: getIspCapacityMbps(),
       fromTimestamp: fromTs,
       toTimestamp: now,
       count: dataPoints.length,

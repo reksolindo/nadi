@@ -2,6 +2,7 @@ import { FastifyPluginAsync } from 'fastify';
 import { MikrotikPoller } from '../mikrotik/poller.js';
 import { RawSamplesRepository } from '../db/raw-samples.js';
 import { AggregatesRepository } from '../db/aggregates.js';
+import { getIspCapacityMbps } from '../db/settings.js';
 import { config } from '../config.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -54,7 +55,7 @@ export const statusRoutes = (poller: MikrotikPoller): FastifyPluginAsync => {
           sizeBytes: dbSizeBytes,
         },
         network: {
-          capacityMbps: config.CAPACITY_MBPS,
+          capacityMbps: getIspCapacityMbps(),
         },
       });
     });
