@@ -140,12 +140,20 @@ export const ThreatMap: React.FC<ThreatMapProps> = ({ threatMap, onRefresh }) =>
       worldCopyJump: true,
     });
 
-    // Dark Matter tile layer for authentic cyber SOC feel
+    // ESRI ArcGIS World Dark Gray Base (100% Free, No API Key Required)
     L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
       {
-        subdomains: 'abcd',
-        maxZoom: 19,
+        maxZoom: 16,
+        attribution: 'Esri, HERE, Garmin, © OpenStreetMap contributors',
+      }
+    ).addTo(map);
+
+    // ESRI ArcGIS World Dark Gray Reference (Labels & Country Boundaries)
+    L.tileLayer(
+      'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 16,
       }
     ).addTo(map);
 
