@@ -67,6 +67,7 @@ export interface NetworkSummary {
   utilizationPercent: number; // (Total download + upload rate) / Capacity * 100
   wanInterface?: WanInterfaceSample; // Real-time WAN (ether11) physical throughput
   liveDestinations?: LiveTrafficDestination[]; // Real-time traffic destination & app breakdown
+  ispHealth?: IspHealthStatus; // Continuous multi-hop ISP health & packet loss barometer
   topConsumer?: {
     username: string;
     ipAddress: string;
@@ -87,6 +88,7 @@ export interface WebSocketMessage {
   routerError?: string | null;
   securitySummary?: SecuritySummary;
   latestSpeedTest?: SpeedTestResult;
+  ispHealth?: IspHealthStatus;
 }
 
 export interface HistoricalDataPoint {
@@ -256,3 +258,35 @@ export interface SystemStatus {
     sizeBytes: number;
   };
 }
+
+// ----------------------------------------------------
+// ISP SLA, Multi-Hop Diagnostics & Dispute Barometer
+// ----------------------------------------------------
+
+export interface HopPingResult {
+  hopNumber: number;
+  label: string;
+  target: string;
+  avgLatencyMs: number;
+  minLatencyMs: number;
+  maxLatencyMs: number;
+  packetLossPercent: number;
+  status: 'healthy' | 'degraded' | 'down';
+  description: string;
+}
+
+export interface IspHealthStatus {
+  status: 'healthy' | 'degraded' | 'critical';
+  latencyMs: number;
+  jitterMs: number;
+  packetLossPercent: number;
+  dnsResolutionMs: number;
+  lastCheckedAt: number;
+  hops: HopPingResult[];
+  diagnosis: string;
+  suggestedAction: string;
+  disputeTemplate: string;
+  wanIp?: string;
+  ispName?: string;
+}
+

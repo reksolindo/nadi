@@ -14,6 +14,7 @@ import { RawSamplesRepository } from '../db/raw-samples.js';
 import { WebSocketHandler } from '../ws/handler.js';
 import { ThreatAnalyzer } from './threat-analyzer.js';
 import { SpeedTestService } from './speedtest.js';
+import { IspHealthService } from './ispHealth.js';
 import { getIspCapacityMbps } from '../db/settings.js';
 
 // ==========================================
@@ -156,8 +157,19 @@ export class MikrotikPoller {
         console.warn(`[Poller] Destination traffic query failed: ${destErr.message}`);
       }
 
+      // Multi-hop ISP health & packet loss barometer (uses 12s cache)
+      let ispHealth;
+      try {
+        ispHealth = await IspHealthService.check(false);
+      } catch (healthErr: any) {
+        console.warn(`[Poller] ISP Health check failed: ${healthErr.message}`);
+      }
+
       // Compute network summary with dynamic ISP capacity
       const summary = this.computeSummary(samples, wanSample, liveDestinations);
+      if (ispHealth) {
+        summary.ispHealth = ispHealth;
+      }
       this.latestSamples = samples;
       this.latestSummary = summary;
 
@@ -179,6 +191,7 @@ export class MikrotikPoller {
         routerConnected: this.client.connected || config.MOCK_MODE,
         routerError: this.lastError,
         latestSpeedTest: SpeedTestService.getLatest(),
+        ispHealth,
       };
 
       WebSocketHandler.broadcast(wsMessage);

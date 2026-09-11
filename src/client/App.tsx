@@ -10,6 +10,8 @@ import { DiagnosticsPage } from './pages/DiagnosticsPage.js';
 import { TrafficInspectorModal } from './components/TrafficInspectorModal.js';
 import { SpeedTestModal } from './components/SpeedTestModal.js';
 import { SettingsModal } from './components/SettingsModal.js';
+import { IspHealthModal } from './components/IspHealthModal.js';
+import { refreshIspHealth } from './lib/api.js';
 import { HeartPulse } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -18,6 +20,7 @@ export const App: React.FC = () => {
   const [inspectingUser, setInspectingUser] = useState<{ ip: string; username?: string } | null>(null);
   const [isSpeedTestOpen, setIsSpeedTestOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isIspHealthOpen, setIsIspHealthOpen] = useState<boolean>(false);
 
   const {
     connected: wsConnected,
@@ -51,8 +54,10 @@ export const App: React.FC = () => {
         routerError={routerError}
         lastUpdated={lastUpdated}
         capacityMbps={capacityMbps}
+        ispHealth={summary?.ispHealth}
         onOpenSpeedTest={() => setIsSpeedTestOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenIspHealth={() => setIsIspHealthOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -111,6 +116,20 @@ export const App: React.FC = () => {
         onClose={() => setIsSpeedTestOpen(false)}
         wanLive={summary?.wanInterface}
         capacityMbps={capacityMbps}
+      />
+
+      {/* ISP SLA & Dispute Barometer Modal */}
+      <IspHealthModal
+        isOpen={isIspHealthOpen}
+        onClose={() => setIsIspHealthOpen(false)}
+        health={summary?.ispHealth}
+        capacityMbps={capacityMbps}
+        onRefresh={async () => {
+          const res = await refreshIspHealth();
+          if (res.success && res.health && summary) {
+            summary.ispHealth = res.health;
+          }
+        }}
       />
 
       {/* Footer */}

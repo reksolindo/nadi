@@ -85,4 +85,17 @@ export async function updateConfig(payload: { capacityMbps?: number; routerLabel
   return res.json();
 }
 
+export async function fetchIspHealth() {
+  const res = await fetch('/api/isp/health');
+  if (!res.ok) throw new Error(`Failed to fetch ISP health: ${res.statusText}`);
+  return res.json();
+}
+
+export async function refreshIspHealth() {
+  const res = await fetch('/api/isp/health/refresh', { method: 'POST' });
+  if (!res.ok) throw new Error(`Failed to refresh ISP health: ${res.statusText}`);
+  return res.json();
+}
+
+
 

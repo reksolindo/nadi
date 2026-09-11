@@ -866,8 +866,14 @@ export class MikrotikClient {
   async getLiveTrafficDestinations(totalWanBps = 0): Promise<LiveTrafficDestination[]> {
     try {
       const [rawConns, dnsCache] = await Promise.all([
-        this.executeCommand(['/ip/firewall/connection/print']).catch(() => []),
-        this.executeCommand(['/ip/dns/cache/print']).catch(() => []),
+        Promise.race([
+          this.executeCommand(['/ip/firewall/connection/print']),
+          new Promise<RouterOSSentence[]>((_, reject) => setTimeout(() => reject(new Error('Connection query timeout')), 2500))
+        ]).catch(() => []),
+        Promise.race([
+          this.executeCommand(['/ip/dns/cache/print']),
+          new Promise<RouterOSSentence[]>((_, reject) => setTimeout(() => reject(new Error('DNS query timeout')), 2000))
+        ]).catch(() => []),
       ]);
 
       const dnsMap = new Map<string, string>();
